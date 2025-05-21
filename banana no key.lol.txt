@@ -1,28 +1,136 @@
-local UniverseID = game:GetService("HttpService"):JSONDecode(
-    game:HttpGet("https://apis.roblox.com/universes/v1/places/"..game.PlaceId.."/universe")
-).universeId
+-- Xóa GUI cũ nếu có
+pcall(function()
+    game.CoreGui:FindFirstChild("GrowGardenUI"):Destroy()
+end)
 
--- No Key Version
-if game.PlaceId == 1537690962 or game.PlaceId == 4079902982 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BSS-BananaCat.lua"))()
-elseif game.PlaceId == 10260193230 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/Seahuhu-BananaCat.lua"))()
-elseif game.PlaceId == 7449423635 or game.PlaceId == 2753915549 or game.PlaceId == 4442272183 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BF-BananaCat.lua"))()
-elseif game.PlaceId == 4520749081 or game.PlaceId == 6381829480 or game.PlaceId == 15759515082 or game.PlaceId == 5931540094 then
-    local start = tick()
-    repeat task.wait() until game.Players.LocalPlayer 
-        and game.Players.LocalPlayer:FindFirstChild("DataLoaded") 
-        and game.Players.LocalPlayer:FindFirstChild("DataLoaded").Value
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/KL-BananaCat.lua"))()
-elseif game.PlaceId == 18901165922 or game.PlaceId == 19006211286 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/refs/heads/main/PetsGo.lua"))()
-elseif game.PlaceId == 16732694052 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/AhmadV99/Banana-Cat-Hub/main/Fisch.lua"))()
-elseif UniverseID == 5844593548 then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/AnimeReborn.lua"))()
-else
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/AV-BananaCat.lua"))()
+-- Tạo GUI mới
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GrowGardenUI"
+pcall(function() ScreenGui.Parent = gethui() end)
+if not ScreenGui.Parent then ScreenGui.Parent = game.CoreGui end
+
+-- Logo toggle UI
+local logo = Instance.new("ImageButton")
+logo.Parent = ScreenGui
+logo.Size = UDim2.new(0, 50, 0, 50)
+logo.Position = UDim2.new(0, 10, 0, 10)
+logo.Image = "rbxassetid://105486552530887" -- Biểu tượng lôi cuốn
+logo.BackgroundTransparency = 1
+logo.Name = "ToggleUI"
+logo.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+-- UI Frame
+local frame = Instance.new("Frame")
+frame.Parent = ScreenGui
+frame.Size = UDim2.new(0, 280, 0, 180)
+frame.Position = UDim2.new(0, 70, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Visible = false
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+
+-- Drop shadow
+local shadow = Instance.new("ImageLabel", frame)
+shadow.Size = UDim2.new(1, 30, 1, 30)
+shadow.Position = UDim2.new(0, -15, 0, -15)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.5
+shadow.ZIndex = 0
+
+-- Tiêu đề
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundTransparency = 1
+title.Text = "🌱 Grow Tool Cloner UI"
+title.Font = Enum.Font.FredokaOne
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextStrokeTransparency = 0.8
+
+-- Nút bật/tắt
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1, -30, 0, 40)
+toggle.Position = UDim2.new(0, 15, 0, 50)
+toggle.Text = "🟢 Clone Tool: ON"
+toggle.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 15
+toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+
+-- Hiển thị số lần clone
+local countLabel = Instance.new("TextLabel", frame)
+countLabel.Size = UDim2.new(1, -30, 0, 30)
+countLabel.Position = UDim2.new(0, 15, 0, 105)
+countLabel.BackgroundTransparency = 1
+countLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+countLabel.Font = Enum.Font.Gotham
+title.TextStrokeTransparency = 0.8
+countLabel.TextSize = 14
+countLabel.TextXAlignment = Enum.TextXAlignment.Left
+countLabel.Text = "🔁 Clones: 0"
+
+-- Nối logo toggle UI
+logo.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Biến
+local enabled = true
+local cloning = false
+local cloneCount = 0
+local plr = game.Players.LocalPlayer
+
+-- Toggle logic
+toggle.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    if enabled then
+        toggle.Text = "🟢 Clone Tool: ON"
+        toggle.BackgroundColor3 = Color3.fromRGB(40, 150, 60)
+    else
+        toggle.Text = "🔴 Clone Tool: OFF"
+        toggle.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+    end
+end)
+
+-- Clone tool
+local function startCloning(tool)
+    if cloning then return end
+    cloning = true
+    while enabled and tool and tool.Parent == plr.Character do
+        local clone = tool:Clone()
+        clone.Parent = plr.Backpack
+        cloneCount += 1
+        countLabel.Text = "🔁 Clones: " .. tostring(cloneCount)
+        task.wait(0.25)
+    end
+    cloning = false
 end
 
-print("Menu is now loaded and functional without requiring any key.")
+-- Theo dõi khi nhân vật có tool
+local function watchTools(char)
+    char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            task.wait(0.1)
+            startCloning(child)
+        end
+    end)
+end
+
+-- Khi nhân vật xuất hiện
+plr.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    watchTools(char)
+end)
+
+-- Nếu nhân vật đang có sẵn
+if plr.Character then
+    watchTools(plr.Character)
+    for _, item in ipairs(plr.Character:GetChildren()) do
+        if item:IsA("Tool") then
+            startCloning(item)
+        end
+    end
+end
